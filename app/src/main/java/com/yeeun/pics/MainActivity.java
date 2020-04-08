@@ -31,6 +31,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Parcelable;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -40,6 +41,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,10 +68,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
 
     GoogleAccountCredential mCredential;
+    String accName;
+    String id;
     private TextView mStatusText;
     private TextView mResultText;
     private Button mGetEventButton;
-    private Button mAddEventButton;
+
     private Button addCalendarBtn;
     Toast toast;
     ProgressDialog mProgress;
@@ -93,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         setContentView(R.layout.activity_main);
 
         addCalendarBtn = (Button) findViewById(R.id.button_main_add_calendar);
-        //mAddEventButton = (Button) findViewById(R.id.button_main_add_event);
         //mGetEventButton = (Button) findViewById(R.id.button_main_get_event);
 
         //mStatusText = (TextView) findViewById(R.id.textview_main_status);
@@ -115,17 +118,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         });
 
 
-//        mAddEventButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                mAddEventButton.setEnabled(false);
-//                mStatusText.setText("");
-//                mID = 2;        //이벤트 생성
-//                getResultsFromApi();
-//                mAddEventButton.setEnabled(true);
-//            }
-//        });
-
 
 //        mGetEventButton.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -144,7 +136,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 //        mResultText.setMovementMethod(new ScrollingMovementMethod());
 
 //        mStatusText.setVerticalScrollBarEnabled(true);
-//        mStatusText.setMovementMethod(new ScrollingMovementMethod());
+//        mStatusText.setMovementMethod(new ScrollingMovemen'[\
+//        tMethod());
+
+
 //        mStatusText.setText("버튼을 눌러 테스트를 진행하세요.");
 
 
@@ -161,8 +156,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         ).setBackOff(new ExponentialBackOff()); // I/O 예외 상황을 대비해서 백오프 정책 사용
 
     }
-
-
 
 
     /**
@@ -252,6 +245,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
                 // 선택된 구글 계정 이름으로 설정한다.
                 mCredential.setSelectedAccountName(accountName);
+                accName  = accountName;
                 getResultsFromApi();
             } else {
                 // 사용자가 구글 계정을 선택할 수 있는 다이얼로그를 보여준다.
@@ -307,6 +301,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
                         mCredential.setSelectedAccountName(accountName);
+                        accName = accountName;
                         getResultsFromApi();
                     }
                 }
@@ -389,7 +384,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
             List<CalendarListEntry> items = calendarList.getItems();
 
-
             for (CalendarListEntry calendarListEntry : items) {
 
                 //calendar 목록 불러와서, 이름이 일치하는지 확인
@@ -441,8 +435,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             try {
                 if ( mID == 1) { // 캘린더 추가
                     return createCalendar();
-                }else if (mID == 2) { //이벤트 추가
-                    return addEvent();
                 }
                 else if (mID == 3) {//이벤트 받아오
                     return getEvent();
@@ -501,10 +493,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
          * 선택되어 있는 Google 계정에 새 캘린더를 추가한다.
          */
         private String createCalendar() throws IOException {
-            String ids = getCalendarID("Pics");
+            id = getCalendarID("Pics");
 
             //Pics라는 이름의 캘린더가 없는 경우
-            if ( ids == null ) {
+            if ( id == null ) {
                 // 새로운 캘린더 생성
                 com.google.api.services.calendar.model.Calendar calendar = new Calendar();
 
@@ -529,12 +521,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                                 .update(calendarListEntry.getId(), calendarListEntry)
                                 .setColorRgbFormat(true)
                                 .execute();
+
+                id = getCalendarID("Pics");
             }
 
-            Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
-            intent.putExtra("CalendarId", getCalendarID("Pics"));
-
-            startActivity(intent);
             // 새로 추가한 캘린더의 ID를 리턴
             return "캘린더가 생성되었습니다.";
         }
@@ -545,6 +535,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         protected void onPostExecute(String output) {
 
             mProgress.hide();
+
+            if(mID == 1) {
+
+                Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
+                intent.putExtra("name", accName);
+                intent.putExtra("id", id);
+                startActivity(intent);
+            }
       //      mStatusText.setText(output);
 
   //          if ( mID == 3 )   mResultText.setText(TextUtils.join("\n\n", eventStrings));
@@ -572,56 +570,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
 
 
-        private String addEvent() {
-            String calendarID = getCalendarID("Pics");
-
-            if ( calendarID == null ){
-                return "캘린더를 먼저 생성하세요.";
-            }
-
-            Event event = new Event()
-                    .setSummary("일정")
-                    .setLocation("서울시")
-                    .setDescription("캘린더에 이벤트 추가하는 것을 테스트합니다.");
-
-            java.util.Calendar calander;
-
-            calander = java.util.Calendar.getInstance();
-            //simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssZ", Locale.KOREA);
-            // Z에 대응하여 +0900이 입력되어 문제 생겨 수작업으로 입력
-            SimpleDateFormat simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss+09:00", Locale.KOREA);
-            String datetime = simpledateformat.format(calander.getTime());
-
-            DateTime startDateTime = new DateTime(datetime);
-            EventDateTime start = new EventDateTime()
-                    .setDateTime(startDateTime)
-                    .setTimeZone("Asia/Seoul");
-            event.setStart(start);
-
-            Log.d( "@@@", datetime );
-
-
-            DateTime endDateTime = new  DateTime(datetime);
-            EventDateTime end = new EventDateTime()
-                    .setDateTime(endDateTime)
-                    .setTimeZone("Asia/Seoul");
-            event.setEnd(end);
-
-            //String[] recurrence = new String[]{"RRULE:FREQ=DAILY;COUNT=2"};
-            //event.setRecurrence(Arrays.asList(recurrence));
-
-
-            try {
-                event = mService.events().insert(calendarID, event).execute();
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.e("Exception", "Exception : " + e.toString());
-            }
-            System.out.printf("Event created: %s\n", event.getHtmlLink());
-            Log.e("Event", "created : " + event.getHtmlLink());
-            String eventStrings = "created : " + event.getHtmlLink();
-            return eventStrings;
-        }
     }
 
 
