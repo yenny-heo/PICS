@@ -157,7 +157,7 @@ public class CalendarActivity extends AppCompatActivity {
             String calendarID = id;
 
             Event event = new Event()
-                    .setSummary("일정")
+                    .setSummary("테스트 일정")
                     .setLocation("서울시")
                     .setDescription("캘린더에 이벤트 추가하는 것을 테스트합니다.");
 
@@ -168,16 +168,16 @@ public class CalendarActivity extends AppCompatActivity {
             // Z에 대응하여 +0900이 입력되어 문제 생겨 수작업으로 입력
             SimpleDateFormat simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss+09:00", Locale.KOREA);
             String datetime = simpledateformat.format(calander.getTime());
-
+            //시작시간 setting
             DateTime startDateTime = new DateTime(datetime);
             EventDateTime start = new EventDateTime()
                     .setDateTime(startDateTime)
                     .setTimeZone("Asia/Seoul");
             event.setStart(start);
-
+//setDate(dateTime)=> yyyy-MM-dd만 있으면 됨
             Log.d( "@@@", datetime );
 
-
+            //끝나는 시간 setting
             DateTime endDateTime = new  DateTime(datetime);
             EventDateTime end = new EventDateTime()
                     .setDateTime(endDateTime)
