@@ -17,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="Google 캘린더 생성" />
+        android:text="Google 캘린더 연동" />
 
 
 </LinearLayout>

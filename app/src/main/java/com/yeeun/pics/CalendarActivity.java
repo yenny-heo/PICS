@@ -44,6 +44,9 @@ public class CalendarActivity extends AppCompatActivity {
     private TextView accountID;
 
     int mID = 0;
+    String scheduleTitle;
+    String startDateString;
+    String endDateString;
     String id;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +74,32 @@ public class CalendarActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 addEventBtn.setEnabled(false);
-                // mStatusText.setText("");
                 mID = 2;        //이벤트 생성
-                getResultsFromApi();
+
+                Intent intent = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+                startActivityForResult(intent, 0);
+
                 addEventBtn.setEnabled(true);
             }
         });
+
     }
+
+    //AddScheduleActivity에서 돌아올 때 실행
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (resultCode){
+            case 0:
+                scheduleTitle = data.getStringExtra("title");
+                startDateString = data.getStringExtra("startDate");
+                endDateString = data.getStringExtra("endDate");
+
+                getResultsFromApi();
+
+        }
+    }
+
     private String getResultsFromApi() {
 
         new MakeRequestTask(this, mCredential).execute();
@@ -157,30 +179,32 @@ public class CalendarActivity extends AppCompatActivity {
             String calendarID = id;
 
             Event event = new Event()
-                    .setSummary("테스트 일정")
+                    .setSummary(scheduleTitle)
                     .setLocation("서울시")
-                    .setDescription("캘린더에 이벤트 추가하는 것을 테스트합니다.");
+                    .setDescription("설명");
 
             java.util.Calendar calander;
 
             calander = java.util.Calendar.getInstance();
             //simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssZ", Locale.KOREA);
             // Z에 대응하여 +0900이 입력되어 문제 생겨 수작업으로 입력
-            SimpleDateFormat simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss+09:00", Locale.KOREA);
-            String datetime = simpledateformat.format(calander.getTime());
+            //SimpleDateFormat simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss+09:00", Locale.KOREA);
+            //String datetime = simpledateformat.format(calander.getTime());
             //시작시간 setting
-            DateTime startDateTime = new DateTime(datetime);
+            DateTime startDate = new DateTime(startDateString);
+            DateTime endDate = new DateTime(endDateString);
+
             EventDateTime start = new EventDateTime()
-                    .setDateTime(startDateTime)
+                    //.setDateTime(startDateTime)
+                    .setDate(startDate)
                     .setTimeZone("Asia/Seoul");
             event.setStart(start);
-//setDate(dateTime)=> yyyy-MM-dd만 있으면 됨
-            Log.d( "@@@", datetime );
+
+            Log.d( "@@@", startDateString);
 
             //끝나는 시간 setting
-            DateTime endDateTime = new  DateTime(datetime);
             EventDateTime end = new EventDateTime()
-                    .setDateTime(endDateTime)
+                    .setDate(endDate)
                     .setTimeZone("Asia/Seoul");
             event.setEnd(end);
 
