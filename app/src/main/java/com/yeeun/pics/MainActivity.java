@@ -478,7 +478,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
             }
 
-
             return eventStrings.size() + "개의 데이터를 가져왔습니다.";
         }
 
@@ -506,7 +505,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 CalendarListEntry calendarListEntry = mService.calendarList().get(calendarId).execute();
 
                 // 캘린더의 배경색을 파란색으로 표시  RGB
-                calendarListEntry.setBackgroundColor("#0000ff");
+                calendarListEntry.setBackgroundColor("#ff96e7");
+
 
                 // 변경한 내용을 구글 캘린더에 반영
                 CalendarListEntry updatedCalendarListEntry =
@@ -528,14 +528,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         protected void onPostExecute(String output) {
 
             mProgress.hide();
+            System.out.println("HELLOOOOOOO");
 
-            if(mID == 1) {
-
-                Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
-                intent.putExtra("name", accName);
-                intent.putExtra("id", id);
-                startActivity(intent);
-            }
+            Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
+            intent.putExtra("name", accName);
+            intent.putExtra("id", id);
+            startActivity(intent);
       //      mStatusText.setText(output);
 
   //          if ( mID == 3 )   mResultText.setText(TextUtils.join("\n\n", eventStrings));
@@ -551,13 +549,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                             ((GooglePlayServicesAvailabilityIOException) mLastError)
                                     .getConnectionStatusCode());
                 } else if (mLastError instanceof UserRecoverableAuthIOException) {
+
                     startActivityForResult(
                             ((UserRecoverableAuthIOException) mLastError).getIntent(),
                             MainActivity.REQUEST_AUTHORIZATION);
                 } else {
-          //          mStatusText.setText("MakeRequestTask The following error occurred:\n" + mLastError.getMessage());
+
+                    System.out.println("MakeRequestTask The following error occurred:\n" + mLastError.getMessage());
                 }
             } else {
+
         //        mStatusText.setText("요청 취소됨.");
             }
         }

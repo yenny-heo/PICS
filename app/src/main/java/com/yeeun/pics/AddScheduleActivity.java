@@ -39,9 +39,9 @@ public class AddScheduleActivity extends AppCompatActivity {
                 int startMonth = startDate.getMonth();
                 int startDay = startDate.getDayOfMonth();
 
-                int endYear = startDate.getYear()-1900;
-                int endMonth = startDate.getMonth();
-                int endDay = startDate.getDayOfMonth();
+                int endYear = endDate.getYear()-1900;
+                int endMonth = endDate.getMonth();
+                int endDay = endDate.getDayOfMonth();
 
                 Date startDate = (Date)new Date(startYear, startMonth, startDay);
                 Date endDate = (Date)new Date(endYear, endMonth, endDay);

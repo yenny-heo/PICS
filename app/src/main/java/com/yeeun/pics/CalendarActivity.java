@@ -1,7 +1,9 @@
 package com.yeeun.pics;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -38,7 +40,6 @@ public class CalendarActivity extends AppCompatActivity {
     private com.google.api.services.calendar.Calendar mService = null;
 
     GoogleAccountCredential mCredential;
-    private Button addEventBtn;
     private static final String[] SCOPES = {CalendarScopes.CALENDAR};
 
     private TextView accountID;
@@ -48,6 +49,10 @@ public class CalendarActivity extends AppCompatActivity {
     String startDateString;
     String endDateString;
     String id;
+
+
+    private Button addEventBtn;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,16 +75,35 @@ public class CalendarActivity extends AppCompatActivity {
 
         mCredential.setSelectedAccountName(accID);
 
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final CharSequence[] items= {"이미지로 추가", "직접 추가"};
+        builder.setTitle("방식 선택");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                switch (i) {
+                    case 0:
+                        break;
+                    case 1:
+                        addEventBtn.setEnabled(false);
+                        mID = 2;        //이벤트 생성
+
+                        Intent intent = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+                        startActivityForResult(intent, 0);
+
+                        addEventBtn.setEnabled(true);
+                        break;
+                }
+            }
+        });
+
+        final AlertDialog alertDialog = builder.create();
+
         addEventBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addEventBtn.setEnabled(false);
-                mID = 2;        //이벤트 생성
-
-                Intent intent = new Intent(CalendarActivity.this, AddScheduleActivity.class);
-                startActivityForResult(intent, 0);
-
-                addEventBtn.setEnabled(true);
+                alertDialog.show();
             }
         });
 
@@ -96,6 +120,7 @@ public class CalendarActivity extends AppCompatActivity {
                 endDateString = data.getStringExtra("endDate");
 
                 getResultsFromApi();
+                break;
 
         }
     }
