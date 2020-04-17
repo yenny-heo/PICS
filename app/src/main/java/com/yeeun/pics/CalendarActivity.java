@@ -1,12 +1,21 @@
 package com.yeeun.pics;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -28,7 +37,12 @@ import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +63,8 @@ public class CalendarActivity extends AppCompatActivity {
     String startDateString;
     String endDateString;
     String id;
+
+    File selectedFile;
 
 
     private Button addEventBtn;
@@ -83,14 +99,26 @@ public class CalendarActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 switch (i) {
-                    case 0:
+                    case 0://이미지로 추가
+                        try {
+                            if (ActivityCompat.checkSelfPermission(CalendarActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(CalendarActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                            } else {
+                                Intent intent1 = new Intent(Intent.ACTION_PICK);
+                                intent1.setType("image/*");
+                                startActivityForResult(intent1, 1);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
                         break;
-                    case 1:
+                    case 1://직접 추가
                         addEventBtn.setEnabled(false);
                         mID = 2;        //이벤트 생성
 
-                        Intent intent = new Intent(CalendarActivity.this, AddScheduleActivity.class);
-                        startActivityForResult(intent, 0);
+                        Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+                        startActivityForResult(intent2, 0);
 
                         addEventBtn.setEnabled(true);
                         break;
@@ -109,12 +137,66 @@ public class CalendarActivity extends AppCompatActivity {
 
     }
 
+    //갤러리 접근권한 허용시
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+
+        switch (requestCode) {
+            case 1:
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Intent intent1 = new Intent(Intent.ACTION_PICK);
+                    intent1.setType("image/*");
+                    startActivityForResult(intent1, 1);
+                } else {
+                    //do something like displaying a message that he didn`t allow the app to access gallery and you wont be able to let him select from gallery
+                }
+                break;
+        }
+    }
+
+    private String getRealPathFromURI(Uri contentURI) {
+
+        String result;
+        String [] proj = { MediaStore.Images.Media.DATA };
+        Cursor cursor = getContentResolver().query(contentURI, proj, null, null, null);
+
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
+
+
+    }
+
     //AddScheduleActivity에서 돌아올 때 실행
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode){
-            case 0:
+            case -1://이미지 선택 후
+                try {
+                    Uri dataUri = data.getData();
+
+                    InputStream in = getContentResolver().openInputStream(dataUri);
+                    Bitmap image = BitmapFactory.decodeStream(in);
+
+                    String dataPath = getRealPathFromURI(dataUri);
+                    selectedFile = new File(dataPath);
+                    OutputStream out = new FileOutputStream(selectedFile);
+                    image.compress(Bitmap.CompressFormat.JPEG, 100, out);
+
+                    FileUploadUtils.sendToServer(selectedFile);
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            case 0://직접 추가 후
                 scheduleTitle = data.getStringExtra("title");
                 startDateString = data.getStringExtra("startDate");
                 endDateString = data.getStringExtra("endDate");
@@ -182,21 +264,6 @@ public class CalendarActivity extends AppCompatActivity {
 
         @Override
         protected void onCancelled() {
-//            if (mLastError != null) {
-//                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-//                    showGooglePlayServicesAvailabilityErrorDialog(
-//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
-//                                    .getConnectionStatusCode());
-//                } else if (mLastError instanceof UserRecoverableAuthIOException) {
-//                    startActivityForResult(
-//                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
-//                            MainActivity.REQUEST_AUTHORIZATION);
-//                } else {
-//                    //          mStatusText.setText("MakeRequestTask The following error occurred:\n" + mLastError.getMessage());
-//                }
-//            } else {
-//                //        mStatusText.setText("요청 취소됨.");
-//            }
         }
 
 
@@ -235,8 +302,6 @@ public class CalendarActivity extends AppCompatActivity {
 
             //String[] recurrence = new String[]{"RRULE:FREQ=DAILY;COUNT=2"};
             //event.setRecurrence(Arrays.asList(recurrence));
-
-
             try {
                 event = mService.events().insert(calendarID, event).execute();
             } catch (Exception e) {

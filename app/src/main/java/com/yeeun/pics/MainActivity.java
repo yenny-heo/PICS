@@ -528,7 +528,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         protected void onPostExecute(String output) {
 
             mProgress.hide();
-            System.out.println("HELLOOOOOOO");
 
             Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
             intent.putExtra("name", accName);
