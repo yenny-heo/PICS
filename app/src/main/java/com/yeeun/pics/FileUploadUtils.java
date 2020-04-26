@@ -14,26 +14,43 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class FileUploadUtils {
-    public static void sendToServer(File file){
-        RequestBody requestBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("file", file.getName(), RequestBody.create(MultipartBody.FORM, file))
-                .build();
-        Request request = new Request.Builder()
-                .url("http://3.34.46.56:5000/file")
-                .post(requestBody)
-                .build();
-        OkHttpClient client = new OkHttpClient();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
+    private static String res;
+    public static String sendToServer(File file) {
+        try {
+            RequestBody requestBody = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("file", file.getName(), RequestBody.create(MultipartBody.FORM, file))
+                    .build();
+            Request request = new Request.Builder()
+                    .url("http://13.125.229.229:5000/file")
+                    .post(requestBody)
+                    .build();
+            OkHttpClient client = new OkHttpClient();
 
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                Log.d("TEST: ", response.body().string());
-            }
-        });
+            Response response = client.newCall(request).execute();
+
+            String message = response.body().string();
+            System.out.println(message);
+
+            res = response.body().string();
+//Async
+//        client.newCall(request).enqueue(new Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//                e.printStackTrace();
+//                res = call.toString();
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//                Log.d("TEST: ", response.body().string());
+//                res = response.body().string();
+//            }
+//        });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return res;
     }
 }

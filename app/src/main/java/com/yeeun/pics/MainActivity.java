@@ -24,18 +24,23 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +76,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     Toast toast;
     ProgressDialog mProgress;
 
+    Intent intent;
+    String action, type;
+    File selectedFile;
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     static final int REQUEST_AUTHORIZATION = 1001;
@@ -95,7 +103,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         //mStatusText = (TextView) findViewById(R.id.textview_main_status);
         //mResultText = (TextView) findViewById(R.id.textview_main_result);
 
-
         /**
          * 버튼 클릭으로 동작 테스트
          */
@@ -110,32 +117,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
         });
 
-
-
-//        mGetEventButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                mGetEventButton.setEnabled(false);
-//                mStatusText.setText("");
-//                mID = 3;        //이벤트 가져오기
-//                getResultsFromApi();
-//                mGetEventButton.setEnabled(true);
-//            }
-//        });
-
-
-        // Google Calendar API의 호출 결과를 표시하는 TextView를 준비
-//        mResultText.setVerticalScrollBarEnabled(true);
-//        mResultText.setMovementMethod(new ScrollingMovementMethod());
-
-//        mStatusText.setVerticalScrollBarEnabled(true);
-//        mStatusText.setMovementMethod(new ScrollingMovemen'[\
-//        tMethod());
-
-
-//        mStatusText.setText("버튼을 눌러 테스트를 진행하세요.");
-
-
         // Google Calendar API 호출중에 표시되는 ProgressDialog
         mProgress = new ProgressDialog(this);
         mProgress.setMessage("Google Calendar API 호출 중입니다.");
@@ -148,8 +129,37 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 Arrays.asList(SCOPES)
         ).setBackOff(new ExponentialBackOff()); // I/O 예외 상황을 대비해서 백오프 정책 사용
 
+        //공유하기를 통해 이미지 서버에 보내기
+        intent = getIntent();
+        action = intent.getAction();
+        type = intent.getType();
+        if (Intent.ACTION_SEND.equals(action) && type != null) {
+            mID = 2;
+            getResultsFromApi();
+        } else {
+            // Handle other intents, such as being started from the home screen
+        }
+
     }
 
+    private String getRealPathFromURI(Uri contentURI) {
+
+        String result;
+        String [] proj = { MediaStore.Images.Media.DATA };
+        Cursor cursor = getContentResolver().query(contentURI, proj, null, null, null);
+
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
+
+
+    }
 
     /**
      * 다음 사전 조건을 모두 만족해야 Google Calendar API를 사용할 수 있다.
@@ -167,7 +177,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             acquireGooglePlayServices();
         } else if (mCredential.getSelectedAccountName() == null) { // 유효한 Google 계정이 선택되어 있지 않은 경우
-
             chooseAccount();
         } else if (!isDeviceOnline()) {    // 인터넷을 사용할 수 없는 경우
             toast.makeText(getApplicationContext(), "No network connection available", Toast.LENGTH_LONG).show();
@@ -199,7 +208,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this);
 
         if (apiAvailability.isUserResolvableError(connectionStatusCode)) {
-
             showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode);
         }
     }
@@ -235,7 +243,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             String accountName = getPreferences(Context.MODE_PRIVATE)
                     .getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
-
                 // 선택된 구글 계정 이름으로 설정한다.
                 mCredential.setSelectedAccountName(accountName);
                 accName  = accountName;
@@ -264,7 +271,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     /*
      * 구글 플레이 서비스 업데이트 다이얼로그, 구글 계정 선택 다이얼로그, 인증 다이얼로그에서 되돌아올때 호출된다.
      */
-
     @Override
     protected void onActivityResult(
             int requestCode,  // onActivityResult가 호출되었을 때 요청 코드로 요청을 구분
@@ -426,7 +432,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         @Override
         protected String doInBackground(Void... params) {
             try {
-                if ( mID == 1) { // 캘린더 추가
+                if ( mID == 1 || mID == 2) { // 캘린더 추가
                     return createCalendar();
                 }
                 else if (mID == 3) {//이벤트 받아오
@@ -473,8 +479,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     // 모든 이벤트가 시작 시간을 갖고 있지는 않다. 그런 경우 시작 날짜만 사용
                     start = event.getStart().getDate();
                 }
-
-
                 eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
             }
 
@@ -504,9 +508,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 // 구글 캘린더의 캘린더 목록에서 새로 만든 캘린더를 검색
                 CalendarListEntry calendarListEntry = mService.calendarList().get(calendarId).execute();
 
-                // 캘린더의 배경색을 파란색으로 표시  RGB
+                // 캘린더의 배경색 변경
                 calendarListEntry.setBackgroundColor("#ff96e7");
-
 
                 // 변경한 내용을 구글 캘린더에 반영
                 CalendarListEntry updatedCalendarListEntry =
@@ -516,6 +519,27 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                                 .execute();
 
                 id = getCalendarID("Pics");
+            }
+            //공유하기를 통해 일정 추가시 데이터 전송
+            if(mID == 2){
+                if (type.startsWith("image/")) {
+                    Log.d(this.getClass().getName(), "image");
+                    Log.d(this.getClass().getName(), intent.toString());
+                    Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+                    if (imageUri != null) {
+
+                        Log.d(this.getClass().getName(), imageUri.toString());
+                        Log.d(this.getClass().getName(),"image 받아옴");
+
+                        String dataPath = getRealPathFromURI(imageUri);
+                        selectedFile = new File(dataPath);
+
+                        FileUploadUtils.sendToServer(selectedFile);
+
+                    }
+                    // Update UI to reflect image being shared }
+                }
+                //서버에서 받아온 데이터로 일정 추가하기
             }
 
             // 새로 추가한 캘린더의 ID를 리턴

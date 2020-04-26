@@ -6,12 +6,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,31 +22,19 @@ import android.widget.TextView;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.calendar.CalendarScopes;
-import com.google.api.services.calendar.model.Calendar;
-import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
-import com.google.api.services.calendar.model.Events;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 public class CalendarActivity extends AppCompatActivity {
 
@@ -65,6 +52,7 @@ public class CalendarActivity extends AppCompatActivity {
     String id;
 
     File selectedFile;
+    ProgressDialog mProgress;
 
 
     private Button addEventBtn;
@@ -76,6 +64,9 @@ public class CalendarActivity extends AppCompatActivity {
 
         accountID = (TextView) findViewById(R.id.calendar_id);
         addEventBtn = (Button) findViewById(R.id.button_main_add_event);
+
+        mProgress = new ProgressDialog(this);
+        mProgress.setMessage("일정 데이터로 변환중입니다...");
 
         Intent intent = getIntent();
         String accID =  intent.getStringExtra("name");
@@ -126,6 +117,7 @@ public class CalendarActivity extends AppCompatActivity {
             }
         });
 
+
         final AlertDialog alertDialog = builder.create();
 
         addEventBtn.setOnClickListener(new View.OnClickListener() {
@@ -137,7 +129,7 @@ public class CalendarActivity extends AppCompatActivity {
 
     }
 
-    //갤러리 접근권한 허용시
+    //갤러리 접근권한에서 돌아올 때 실행
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
 
@@ -180,29 +172,24 @@ public class CalendarActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode){
             case -1://이미지 선택 후
-                try {
+                    mProgress.show();
                     Uri dataUri = data.getData();
-
-                    InputStream in = getContentResolver().openInputStream(dataUri);
-                    Bitmap image = BitmapFactory.decodeStream(in);
 
                     String dataPath = getRealPathFromURI(dataUri);
                     selectedFile = new File(dataPath);
-                    OutputStream out = new FileOutputStream(selectedFile);
-                    image.compress(Bitmap.CompressFormat.JPEG, 100, out);
 
-                    FileUploadUtils.sendToServer(selectedFile);
+                    String res = FileUploadUtils.sendToServer(selectedFile);
+                    System.out.println("헬로: "+res);
+                    mProgress.hide();
+                    break;
 
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
             case 0://직접 추가 후
-                scheduleTitle = data.getStringExtra("title");
-                startDateString = data.getStringExtra("startDate");
-                endDateString = data.getStringExtra("endDate");
+                    scheduleTitle = data.getStringExtra("title");
+                    startDateString = data.getStringExtra("startDate");
+                    endDateString = data.getStringExtra("endDate");
 
-                getResultsFromApi();
-                break;
+                    getResultsFromApi();
+                    break;
 
         }
     }
@@ -244,7 +231,9 @@ public class CalendarActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... params) {
             try {
-                return addEvent();
+                DateTime startDate = new DateTime(startDateString);
+                DateTime endDate = new DateTime(endDateString);
+                return addEvent(id, startDate, endDate);
 
             } catch (Exception e) {
                 mLastError = e;
@@ -267,9 +256,7 @@ public class CalendarActivity extends AppCompatActivity {
         }
 
 
-        private String addEvent() {
-            String calendarID = id;
-
+        private String addEvent(String calendarID, DateTime startDate, DateTime endDate) {
             Event event = new Event()
                     .setSummary(scheduleTitle)
                     .setLocation("서울시")
@@ -283,8 +270,6 @@ public class CalendarActivity extends AppCompatActivity {
             //SimpleDateFormat simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss+09:00", Locale.KOREA);
             //String datetime = simpledateformat.format(calander.getTime());
             //시작시간 setting
-            DateTime startDate = new DateTime(startDateString);
-            DateTime endDate = new DateTime(endDateString);
 
             EventDateTime start = new EventDateTime()
                     //.setDateTime(startDateTime)
