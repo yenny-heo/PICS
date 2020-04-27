@@ -525,16 +525,25 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (type.startsWith("image/")) {
                     Log.d(this.getClass().getName(), "image");
                     Log.d(this.getClass().getName(), intent.toString());
-                    Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-                    if (imageUri != null) {
+                    Uri dataUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+                    if (dataUri != null) {
 
-                        Log.d(this.getClass().getName(), imageUri.toString());
+                        Log.d(this.getClass().getName(), dataUri.toString());
                         Log.d(this.getClass().getName(),"image 받아옴");
 
-                        String dataPath = getRealPathFromURI(imageUri);
+                        String dataPath = getRealPathFromURI(dataUri);
                         selectedFile = new File(dataPath);
 
-                        FileUploadUtils.sendToServer(selectedFile);
+                        //서버와 통신
+                        new Thread() {
+                            public void run() {
+
+                                FileUploadUtils.sendToServer(selectedFile);
+                                String res = FileUploadUtils.res;
+                                System.out.println(res);
+
+                            }
+                        }.start();
 
                     }
                     // Update UI to reflect image being shared }
@@ -556,6 +565,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
             intent.putExtra("name", accName);
             intent.putExtra("id", id);
+            intent.putExtra("preMID", mID);
             startActivity(intent);
       //      mStatusText.setText(output);
 

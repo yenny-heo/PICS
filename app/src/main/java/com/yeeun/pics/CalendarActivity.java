@@ -46,13 +46,13 @@ public class CalendarActivity extends AppCompatActivity {
     private TextView accountID;
 
     int mID = 0;
+    int preMID;
     String scheduleTitle;
     String startDateString;
     String endDateString;
     String id;
 
     File selectedFile;
-    ProgressDialog mProgress;
 
 
     private Button addEventBtn;
@@ -65,12 +65,13 @@ public class CalendarActivity extends AppCompatActivity {
         accountID = (TextView) findViewById(R.id.calendar_id);
         addEventBtn = (Button) findViewById(R.id.button_main_add_event);
 
-        mProgress = new ProgressDialog(this);
-        mProgress.setMessage("일정 데이터로 변환중입니다...");
 
         Intent intent = getIntent();
         String accID =  intent.getStringExtra("name");
         id = intent.getStringExtra("id");
+        preMID = intent.getIntExtra("preMID", 0);
+        //preMID == 2이면 바로 AddSchedule로 이동함
+
         accountID.setText("계정 아이디:" + accID);
 
         // Google Calendar API 사용하기 위해 필요한 인증 초기화( 자격 증명 credentials, 서비스 객체 )
@@ -162,8 +163,6 @@ public class CalendarActivity extends AppCompatActivity {
             cursor.close();
         }
         return result;
-
-
     }
 
     //AddScheduleActivity에서 돌아올 때 실행
@@ -172,22 +171,29 @@ public class CalendarActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode){
             case -1://이미지 선택 후
-                    mProgress.show();
                     Uri dataUri = data.getData();
 
                     String dataPath = getRealPathFromURI(dataUri);
                     selectedFile = new File(dataPath);
 
-                    String res = FileUploadUtils.sendToServer(selectedFile);
-                    System.out.println("헬로: "+res);
-                    mProgress.hide();
+                    //서버와 통신
+                    new Thread() {
+                        public void run() {
+                            FileUploadUtils.sendToServer(selectedFile);
+                            String res = FileUploadUtils.res;
+                            System.out.println(res);
+
+                            Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+                            startActivityForResult(intent2, 0);
+                        }
+                    }.start();
+
                     break;
 
             case 0://직접 추가 후
                     scheduleTitle = data.getStringExtra("title");
                     startDateString = data.getStringExtra("startDate");
                     endDateString = data.getStringExtra("endDate");
-
                     getResultsFromApi();
                     break;
 
@@ -195,7 +201,6 @@ public class CalendarActivity extends AppCompatActivity {
     }
 
     private String getResultsFromApi() {
-
         new MakeRequestTask(this, mCredential).execute();
         return null;
     }
@@ -233,10 +238,12 @@ public class CalendarActivity extends AppCompatActivity {
             try {
                 DateTime startDate = new DateTime(startDateString);
                 DateTime endDate = new DateTime(endDateString);
+                System.out.println(startDate.toString());
                 return addEvent(id, startDate, endDate);
 
             } catch (Exception e) {
                 mLastError = e;
+                e.printStackTrace();
                 cancel(true);
                 return null;
             }
@@ -272,8 +279,7 @@ public class CalendarActivity extends AppCompatActivity {
             //시작시간 setting
 
             EventDateTime start = new EventDateTime()
-                    //.setDateTime(startDateTime)
-                    .setDate(startDate)
+                    .setDateTime(startDate)
                     .setTimeZone("Asia/Seoul");
             event.setStart(start);
 
@@ -281,12 +287,10 @@ public class CalendarActivity extends AppCompatActivity {
 
             //끝나는 시간 setting
             EventDateTime end = new EventDateTime()
-                    .setDate(endDate)
+                    .setDateTime(endDate)
                     .setTimeZone("Asia/Seoul");
             event.setEnd(end);
 
-            //String[] recurrence = new String[]{"RRULE:FREQ=DAILY;COUNT=2"};
-            //event.setRecurrence(Arrays.asList(recurrence));
             try {
                 event = mService.events().insert(calendarID, event).execute();
             } catch (Exception e) {
