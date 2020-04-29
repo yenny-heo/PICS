@@ -16,6 +16,7 @@
         android:id="@+id/button_main_add_calendar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
         android:layout_gravity="center"
         android:text="Google 캘린더 연동" />
 

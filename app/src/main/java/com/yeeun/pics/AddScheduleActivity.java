@@ -3,13 +3,21 @@ package com.yeeun.pics;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.NumberPicker;
 import android.widget.TimePicker;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.lang.reflect.Field;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,12 +34,27 @@ public class AddScheduleActivity extends AppCompatActivity {
 
     private Button submitBtn;
 
+    private String res;
+
+    private int iStartYear;
+    private int iStartMonth;
+    private int iStartDay;
+    private int iStartHour;
+    private int iStartMin;
+
+    private int iEndYear;
+    private int iEndMonth;
+    private int iEndDay;
+    private int iEndHour;
+    private int iEndMin;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_schedule);
 
         title = (EditText) findViewById(R.id.title);
+
         startDate = (DatePicker) findViewById(R.id.startDate);
         endDate = (DatePicker) findViewById(R.id.endDate);
 
@@ -40,11 +63,52 @@ public class AddScheduleActivity extends AppCompatActivity {
 
         submitBtn = (Button) findViewById(R.id.submit);
 
-        //날짜 설정
-        startDate.updateDate(2020,03,22);
-        //시간 설정
-        startTime.setHour(0);
-        startTime.setMinute(20);
+        Intent intent = getIntent();
+        res = intent.getStringExtra("res");
+
+//        int hour_NumberPicker_id = Resources.getSystem().getIdentifier("hour", "id", "android");
+//        int minute_NumberPicker_id = Resources.getSystem().getIdentifier("minute", "id", "android");
+//        NumberPicker hourNumberPicker1 = (NumberPicker)startTime.findViewById(hour_NumberPicker_id);
+//        NumberPicker minuteNumberPicker1 = (NumberPicker)startTime.findViewById(minute_NumberPicker_id);
+//        NumberPicker hourNumberPicker2 = (NumberPicker)endTime.findViewById(hour_NumberPicker_id);
+//        NumberPicker minuteNumberPicker2 = (NumberPicker)endTime.findViewById(minute_NumberPicker_id);
+//        setNumberPickerTextColor(hourNumberPicker1, Color.RED);
+//        setNumberPickerTextColor(hourNumberPicker2, Color.RED);
+//        setNumberPickerTextColor(minuteNumberPicker1, Color.RED);
+//        setNumberPickerTextColor(minuteNumberPicker2, Color.RED);
+
+        if(res != null) {
+
+            try {
+                JSONObject jsonObject = new JSONObject(res);
+                iStartYear = jsonObject.getInt("startYear");
+                iStartMonth = jsonObject.getInt("startMonth");
+                iStartDay = jsonObject.getInt("startDay");
+                iStartHour = jsonObject.getInt("startHour");
+                iStartMin = jsonObject.getInt("startMin");
+
+                iEndYear = jsonObject.getInt("endYear");
+                iEndMonth = jsonObject.getInt("endMonth");
+                iEndDay = jsonObject.getInt("endDay");
+                iEndHour = jsonObject.getInt("endHour");
+                iEndMin = jsonObject.getInt("endMin");
+
+
+                //날짜 설정
+                startDate.updateDate(iStartYear, iStartMonth - 1, iStartDay);
+                endDate.updateDate(iEndYear, iEndMonth - 1, iEndDay);
+                //시간 설정
+                startTime.setHour(iStartHour);
+                startTime.setMinute(iStartMin);
+
+                endTime.setHour(iEndHour);
+                endTime.setMinute(iEndMin);
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
 
         submitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,9 +144,48 @@ public class AddScheduleActivity extends AppCompatActivity {
                 intent.putExtra("startDate", startDateString);
                 intent.putExtra("endDate", endDateString);
 
+                CalendarActivity.mProgress.hide();
                 setResult(0, intent);
                 finish();
             }
         });
     }
+
+//    public static boolean setNumberPickerTextColor(NumberPicker numberPicker, int color) {
+//
+//        final int count = numberPicker.getChildCount();
+//        for (int i=0;i<count;i++) {
+//            View child = numberPicker.getChildAt(i);
+//            if (child instanceof EditText) {
+//                try {
+//                    Field selectorWheelPaintField = numberPicker.getClass()
+//                            .getDeclaredField("mSelectorWheelPaint");
+//                    selectorWheelPaintField.setAccessible(true);
+//                    ((Paint) selectorWheelPaintField.get(numberPicker)).setColor(color);
+//                    ((EditText) child).setTextColor(color);
+//                    numberPicker.invalidate();
+//                    return true;
+//                } catch (NoSuchFieldException e) {
+//
+////Log.w("setNumberPickerTextColor", e);
+//
+//                } catch (IllegalAccessException e) {
+//
+////Log.w("setNumberPickerTextColor", e);
+//
+//                } catch (IllegalArgumentException e) {
+//
+////Log.w("setNumberPickerTextColor", e);
+//
+//                }
+//
+//            }
+//
+//        }
+//
+//        return false;
+//
+//    }
+
+
 }

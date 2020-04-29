@@ -37,6 +37,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,13 +69,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     GoogleAccountCredential mCredential;
     String accName;
     String id;
+    String res;
+
     private TextView mStatusText;
     private TextView mResultText;
     private Button mGetEventButton;
 
     private Button addCalendarBtn;
     Toast toast;
-    ProgressDialog mProgress;
+    static ProgressDialog mProgress;
 
     Intent intent;
     String action, type;
@@ -406,7 +409,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         private MainActivity mActivity;
         List<String> eventStrings = new ArrayList<String>();
 
-
         public MakeRequestTask(MainActivity activity, GoogleAccountCredential credential) {
 
             mActivity = activity;
@@ -527,20 +529,23 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     Log.d(this.getClass().getName(), intent.toString());
                     Uri dataUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
                     if (dataUri != null) {
-
                         Log.d(this.getClass().getName(), dataUri.toString());
                         Log.d(this.getClass().getName(),"image 받아옴");
 
                         String dataPath = getRealPathFromURI(dataUri);
                         selectedFile = new File(dataPath);
 
+                        mProgress.setMessage("서버와 통신 중입니다.");
                         //서버와 통신
                         new Thread() {
                             public void run() {
-
                                 FileUploadUtils.sendToServer(selectedFile);
-                                String res = FileUploadUtils.res;
-                                System.out.println(res);
+                                res = FileUploadUtils.res;
+                                Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
+                                intent.putExtra("name", accName);
+                                intent.putExtra("id", id);
+                                intent.putExtra("data", res);
+                                startActivity(intent);
 
                             }
                         }.start();
@@ -550,7 +555,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 }
                 //서버에서 받아온 데이터로 일정 추가하기
             }
-
             // 새로 추가한 캘린더의 ID를 리턴
             return "캘린더가 생성되었습니다.";
         }
@@ -559,16 +563,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         //doInBackground의 리턴값 받아옴
         @Override
         protected void onPostExecute(String output) {
-
-            mProgress.hide();
-
-            Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
-            intent.putExtra("name", accName);
-            intent.putExtra("id", id);
-            intent.putExtra("preMID", mID);
-            startActivity(intent);
+            if(mID == 1) {
+                mProgress.hide();
+                Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
+                intent.putExtra("name", accName);
+                intent.putExtra("id", id);
+                startActivity(intent);
+            }
       //      mStatusText.setText(output);
-
   //          if ( mID == 3 )   mResultText.setText(TextUtils.join("\n\n", eventStrings));
         }
 

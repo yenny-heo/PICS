@@ -31,6 +31,9 @@ import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,11 +49,13 @@ public class CalendarActivity extends AppCompatActivity {
     private TextView accountID;
 
     int mID = 0;
-    int preMID;
+    String data;
     String scheduleTitle;
     String startDateString;
     String endDateString;
     String id;
+
+    static ProgressDialog mProgress;
 
     File selectedFile;
 
@@ -69,8 +74,17 @@ public class CalendarActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String accID =  intent.getStringExtra("name");
         id = intent.getStringExtra("id");
-        preMID = intent.getIntExtra("preMID", 0);
-        //preMID == 2이면 바로 AddSchedule로 이동함
+        data = intent.getStringExtra("data");
+
+        mProgress = new ProgressDialog(this);
+        mProgress.setMessage("서버와 통신 중입니다.");
+
+        MainActivity.mProgress.hide();
+        System.out.println(data);
+        if(data != null){
+            Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+            startActivityForResult(intent2, 0);
+        }
 
         accountID.setText("계정 아이디:" + accID);
 
@@ -165,7 +179,7 @@ public class CalendarActivity extends AppCompatActivity {
         return result;
     }
 
-    //AddScheduleActivity에서 돌아올 때 실행
+    //이미지 선택 인텐트, AddScheduleActivity에서 돌아올 때 실행
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode, resultCode, data);
@@ -176,15 +190,22 @@ public class CalendarActivity extends AppCompatActivity {
                     String dataPath = getRealPathFromURI(dataUri);
                     selectedFile = new File(dataPath);
 
+                    mProgress.show();
                     //서버와 통신
                     new Thread() {
                         public void run() {
                             FileUploadUtils.sendToServer(selectedFile);
                             String res = FileUploadUtils.res;
+                            //테스트 데이터
+                            res = "{\"startYear\" : \"2020\",\"startMonth\" : \"4\",\"startDay\" : \"27\",\"startHour\" : \"0\",\"startMin\" : \"0\",\"endYear\" : \"2020\",\"endMonth\" : \"4\",\"endDay\" : \"27\",\"endHour\" : \"3\",\"endMin\" : \"3\"}";
                             System.out.println(res);
 
-                            Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
-                            startActivityForResult(intent2, 0);
+
+                            if(res != null) {
+                                Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+                                intent2.putExtra("res", res);
+                                startActivityForResult(intent2, 0);
+                            }
                         }
                     }.start();
 
@@ -250,13 +271,11 @@ public class CalendarActivity extends AppCompatActivity {
 
         }
 
-
         //doInBackground의 리턴값 받아옴
         @Override
         protected void onPostExecute(String output) {
 
         }
-
 
         @Override
         protected void onCancelled() {
