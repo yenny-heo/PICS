@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -30,16 +31,22 @@ import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.Events;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 public class CalendarActivity extends AppCompatActivity {
+
+
+    public static int CREATE_EVENT = 2;
+    public static int GET_EVENT = 3;
 
     private com.google.api.services.calendar.Calendar mService = null;
 
@@ -47,13 +54,14 @@ public class CalendarActivity extends AppCompatActivity {
     private static final String[] SCOPES = {CalendarScopes.CALENDAR};
 
     private TextView accountID;
+    private TextView eventList;
 
     int mID = 0;
     String data;
     String scheduleTitle;
     String startDateString;
     String endDateString;
-    String id;
+    String calendarID;
 
     static ProgressDialog mProgress;
 
@@ -68,12 +76,13 @@ public class CalendarActivity extends AppCompatActivity {
         setContentView(R.layout.activity_calendar);
 
         accountID = (TextView) findViewById(R.id.calendar_id);
+        eventList = (TextView) findViewById(R.id.event_list);
         addEventBtn = (Button) findViewById(R.id.button_main_add_event);
 
 
         Intent intent = getIntent();
         String accID =  intent.getStringExtra("name");
-        id = intent.getStringExtra("id");
+        calendarID = intent.getStringExtra("id");
         data = intent.getStringExtra("data");
 
         mProgress = new ProgressDialog(this);
@@ -96,6 +105,10 @@ public class CalendarActivity extends AppCompatActivity {
         ).setBackOff(new ExponentialBackOff());
 
         mCredential.setSelectedAccountName(accID);
+
+        //일정 받아오기 (이 페이지 돌아올때마다 업데이트돼야됨)
+        mID = GET_EVENT;
+        getResultsFromApi();
 
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -121,11 +134,8 @@ public class CalendarActivity extends AppCompatActivity {
                         break;
                     case 1://직접 추가
                         addEventBtn.setEnabled(false);
-                        mID = 2;        //이벤트 생성
-
                         Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
                         startActivityForResult(intent2, 0);
-
                         addEventBtn.setEnabled(true);
                         break;
                 }
@@ -215,6 +225,7 @@ public class CalendarActivity extends AppCompatActivity {
                     scheduleTitle = data.getStringExtra("title");
                     startDateString = data.getStringExtra("startDate");
                     endDateString = data.getStringExtra("endDate");
+                    mID = CREATE_EVENT;       //이벤트 생성
                     getResultsFromApi();
                     break;
 
@@ -257,10 +268,15 @@ public class CalendarActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... params) {
             try {
-                DateTime startDate = new DateTime(startDateString);
-                DateTime endDate = new DateTime(endDateString);
-                System.out.println(startDate.toString());
-                return addEvent(id, startDate, endDate);
+                if(mID == CREATE_EVENT) {
+                    DateTime startDate = new DateTime(startDateString);
+                    DateTime endDate = new DateTime(endDateString);
+                    System.out.println(startDate.toString());
+                    return addEvent(calendarID, startDate, endDate);
+                }
+                if(mID == GET_EVENT) {
+                    return getEvent();
+                }
 
             } catch (Exception e) {
                 mLastError = e;
@@ -268,19 +284,49 @@ public class CalendarActivity extends AppCompatActivity {
                 cancel(true);
                 return null;
             }
-
+            return null;
         }
 
         //doInBackground의 리턴값 받아옴
         @Override
         protected void onPostExecute(String output) {
-
+            if(mID == CREATE_EVENT){
+                //이벤트 생성시 캘린더 업데이트
+                mID = GET_EVENT;
+                getResultsFromApi();
+            }
+            if(mID == GET_EVENT){//get Event
+                eventList.setText(TextUtils.join("\n\n", eventStrings));
+            }
         }
 
         @Override
         protected void onCancelled() {
         }
 
+        private String getEvent() throws IOException {
+            DateTime now = new DateTime(System.currentTimeMillis());
+
+            Events events = mService.events().list(calendarID)//"primary")
+                    .setMaxResults(10)
+                    //.setTimeMin(now)
+                    .setOrderBy("startTime")
+                    .setSingleEvents(true)
+                    .execute();
+            List<Event> items = events.getItems();
+
+            for (Event event : items) {
+
+                DateTime start = event.getStart().getDateTime();
+                if (start == null) {
+                    // 모든 이벤트가 시작 시간을 갖고 있지는 않다. 그런 경우 시작 날짜만 사용
+                    start = event.getStart().getDate();
+                }
+                eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
+            }
+
+            return eventStrings.size() + "개의 데이터를 가져왔습니다.";
+        }
 
         private String addEvent(String calendarID, DateTime startDate, DateTime endDate) {
             Event event = new Event()
@@ -291,11 +337,6 @@ public class CalendarActivity extends AppCompatActivity {
             java.util.Calendar calander;
 
             calander = java.util.Calendar.getInstance();
-            //simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssZ", Locale.KOREA);
-            // Z에 대응하여 +0900이 입력되어 문제 생겨 수작업으로 입력
-            //SimpleDateFormat simpledateformat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss+09:00", Locale.KOREA);
-            //String datetime = simpledateformat.format(calander.getTime());
-            //시작시간 setting
 
             EventDateTime start = new EventDateTime()
                     .setDateTime(startDate)
