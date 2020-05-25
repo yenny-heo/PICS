@@ -21,6 +21,7 @@ import android.widget.Button;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.http.HttpTransport;
@@ -72,7 +73,7 @@ public class CalendarActivity extends AppCompatActivity {
     File selectedFile;
 
 
-    private Button addEventBtn;
+    private FloatingActionButton addEventBtn;
     private CalendarView calendarView;
 
     List<EventDay> calendarEvents = new ArrayList<>();
@@ -84,7 +85,7 @@ public class CalendarActivity extends AppCompatActivity {
 
         //accountID = (TextView) findViewById(R.id.calendar_id);
         //eventList = (TextView) findViewById(R.id.event_list);
-        addEventBtn = (Button) findViewById(R.id.button_main_add_event);
+        addEventBtn = (FloatingActionButton) findViewById(R.id.button_main_add_event);
         calendarView = (CalendarView) findViewById(R.id.calendarView);
 
         Intent intent = getIntent();

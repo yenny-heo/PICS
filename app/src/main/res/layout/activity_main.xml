@@ -1,28 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:baselineAligned="false"
+    android:gravity="bottom"
     tools:context=".MainActivity">
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/background">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="60dp"
+        android:layout_marginBottom="270dp"
+        android:layout_gravity="top|center"
+        android:text="PICture\nfor\nSchedule"
+        android:textStyle="bold|italic"
+        android:textColor="@color/colorPrimary">
 
-    </ImageView>
+    </TextView>
     <Button
         android:id="@+id/button_main_add_calendar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="200dp"
+        android:layout_marginBottom="50dp"
+        android:padding="5dp"
         android:text="Google 캘린더 연동"
-        android:textColor="@color/colorPrimary"/>
+        android:textColor="#ffffff"
+        android:background="@color/colorPrimaryDark"/>
 
 
-</FrameLayout>
+</LinearLayout>
