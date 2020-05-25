@@ -15,12 +15,12 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
+import com.applandeo.materialcalendarview.CalendarView;
+import com.applandeo.materialcalendarview.EventDay;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.http.HttpTransport;
@@ -37,13 +37,16 @@ import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 
 public class CalendarActivity extends AppCompatActivity {
-
 
     public static int CREATE_EVENT = 2;
     public static int GET_EVENT = 3;
@@ -53,8 +56,8 @@ public class CalendarActivity extends AppCompatActivity {
     GoogleAccountCredential mCredential;
     private static final String[] SCOPES = {CalendarScopes.CALENDAR};
 
-    private TextView accountID;
-    private TextView eventList;
+    //private TextView accountID;
+    //private TextView eventList;
 
     int mID = 0;
     String data;
@@ -63,22 +66,26 @@ public class CalendarActivity extends AppCompatActivity {
     String endDateString;
     String calendarID;
 
+
     static ProgressDialog mProgress;
 
     File selectedFile;
 
 
     private Button addEventBtn;
+    private CalendarView calendarView;
+
+    List<EventDay> calendarEvents = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendar);
 
-        accountID = (TextView) findViewById(R.id.calendar_id);
-        eventList = (TextView) findViewById(R.id.event_list);
+        //accountID = (TextView) findViewById(R.id.calendar_id);
+        //eventList = (TextView) findViewById(R.id.event_list);
         addEventBtn = (Button) findViewById(R.id.button_main_add_event);
-
+        calendarView = (CalendarView) findViewById(R.id.calendarView);
 
         Intent intent = getIntent();
         String accID =  intent.getStringExtra("name");
@@ -95,7 +102,7 @@ public class CalendarActivity extends AppCompatActivity {
             startActivityForResult(intent2, 0);
         }
 
-        accountID.setText("계정 아이디:" + accID);
+        //accountID.setText("계정 아이디:" + accID);
 
         // Google Calendar API 사용하기 위해 필요한 인증 초기화( 자격 증명 credentials, 서비스 객체 )
         // OAuth 2.0를 사용하여 구글 계정 선택 및 인증하기 위한 준비
@@ -109,7 +116,6 @@ public class CalendarActivity extends AppCompatActivity {
         //일정 받아오기 (이 페이지 돌아올때마다 업데이트돼야됨)
         mID = GET_EVENT;
         getResultsFromApi();
-
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final CharSequence[] items= {"이미지로 추가", "직접 추가"};
@@ -152,6 +158,21 @@ public class CalendarActivity extends AppCompatActivity {
             }
         });
 
+    }
+    public static Calendar DatetoCalendar(DateTime dt) throws ParseException {
+        Calendar cal = Calendar.getInstance();
+        String date = dt.toString();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        cal.setTime(sdf.parse(date));
+        return cal;
+    }
+
+    public static Calendar DateTimetoCalendar(DateTime dt) throws ParseException {
+        Calendar cal = Calendar.getInstance();
+        String date = dt.toString();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        cal.setTime(sdf.parse(date));
+        return cal;
     }
 
     //갤러리 접근권한에서 돌아올 때 실행
@@ -296,7 +317,8 @@ public class CalendarActivity extends AppCompatActivity {
                 getResultsFromApi();
             }
             if(mID == GET_EVENT){//get Event
-                eventList.setText(TextUtils.join("\n\n", eventStrings));
+                calendarView.setEvents(calendarEvents);
+                //eventList.setText(TextUtils.join("\n\n", eventStrings));
             }
         }
 
@@ -304,8 +326,7 @@ public class CalendarActivity extends AppCompatActivity {
         protected void onCancelled() {
         }
 
-        private String getEvent() throws IOException {
-            DateTime now = new DateTime(System.currentTimeMillis());
+        private String getEvent() throws IOException, ParseException {
 
             Events events = mService.events().list(calendarID)//"primary")
                     .setMaxResults(10)
@@ -318,11 +339,19 @@ public class CalendarActivity extends AppCompatActivity {
             for (Event event : items) {
 
                 DateTime start = event.getStart().getDateTime();
-                if (start == null) {
+                Calendar calendar = null;
+                if(start != null)
+                    calendar = DateTimetoCalendar(start);
+                else {
                     // 모든 이벤트가 시작 시간을 갖고 있지는 않다. 그런 경우 시작 날짜만 사용
                     start = event.getStart().getDate();
+                    calendar = DatetoCalendar(start);
                 }
+                System.out.print(calendar);
+                calendarEvents.add(new EventDay(calendar, R.drawable.common_google_signin_btn_icon_dark));
+//                System.out.print(start.toString()+"\n");
                 eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
+
             }
 
             return eventStrings.size() + "개의 데이터를 가져왔습니다.";
@@ -333,10 +362,6 @@ public class CalendarActivity extends AppCompatActivity {
                     .setSummary(scheduleTitle)
                     .setLocation("서울시")
                     .setDescription("설명");
-
-            java.util.Calendar calander;
-
-            calander = java.util.Calendar.getInstance();
 
             EventDateTime start = new EventDateTime()
                     .setDateTime(startDate)
