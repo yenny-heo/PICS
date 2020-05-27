@@ -21,6 +21,8 @@ import android.widget.Button;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
+import com.applandeo.materialcalendarview.listeners.OnCalendarPageChangeListener;
+import com.applandeo.materialcalendarview.listeners.OnDayClickListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
@@ -87,6 +89,12 @@ public class CalendarActivity extends AppCompatActivity {
         //eventList = (TextView) findViewById(R.id.event_list);
         addEventBtn = (FloatingActionButton) findViewById(R.id.button_main_add_event);
         calendarView = (CalendarView) findViewById(R.id.calendarView);
+        calendarView.setOnDayClickListener(new OnDayClickListener() {
+            @Override
+            public void onDayClick(EventDay eventDay) {
+                System.out.println("선택선택\n");
+            }
+        });
 
         Intent intent = getIntent();
         String accID =  intent.getStringExtra("name");
@@ -97,9 +105,10 @@ public class CalendarActivity extends AppCompatActivity {
         mProgress.setMessage("서버와 통신 중입니다.");
 
         MainActivity.mProgress.hide();
-        System.out.println(data);
+        //공유하기를 통한 일정추가시
         if(data != null){
             Intent intent2 = new Intent(CalendarActivity.this, AddScheduleActivity.class);
+            intent2.putExtra("res", data);
             startActivityForResult(intent2, 0);
         }
 
@@ -114,7 +123,7 @@ public class CalendarActivity extends AppCompatActivity {
 
         mCredential.setSelectedAccountName(accID);
 
-        //일정 받아오기 (이 페이지 돌아올때마다 업데이트돼야됨)
+        //일정 받아오기
         mID = GET_EVENT;
         getResultsFromApi();
 
@@ -158,6 +167,8 @@ public class CalendarActivity extends AppCompatActivity {
                 alertDialog.show();
             }
         });
+
+
 
     }
     public static Calendar DatetoCalendar(DateTime dt) throws ParseException {
@@ -229,7 +240,7 @@ public class CalendarActivity extends AppCompatActivity {
                             FileUploadUtils.sendToServer(selectedFile);
                             String res = FileUploadUtils.res;
                             //테스트 데이터
-                            res = "{\"startYear\" : \"2020\",\"startMonth\" : \"4\",\"startDay\" : \"27\",\"startHour\" : \"0\",\"startMin\" : \"0\",\"endYear\" : \"2020\",\"endMonth\" : \"4\",\"endDay\" : \"27\",\"endHour\" : \"3\",\"endMin\" : \"3\"}";
+                            //res = "{\"startYear\" : \"2020\",\"startMonth\" : \"4\",\"startDay\" : \"27\",\"startHour\" : \"0\",\"startMin\" : \"0\",\"endYear\" : \"2020\",\"endMonth\" : \"4\",\"endDay\" : \"27\",\"endHour\" : \"3\",\"endMin\" : \"3\"}";
                             System.out.println(res);
 
 
@@ -348,17 +359,18 @@ public class CalendarActivity extends AppCompatActivity {
                     start = event.getStart().getDate();
                     calendar = DatetoCalendar(start);
                 }
-                System.out.print(calendar);
-                calendarEvents.add(new EventDay(calendar, R.drawable.common_google_signin_btn_icon_dark));
-//                System.out.print(start.toString()+"\n");
+                calendarEvents.add(new EventDay(calendar, R.drawable.event));
+                System.out.print(start.toString()+"\n");
                 eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
 
             }
 
+            System.out.println("set Event!!\n");
             return eventStrings.size() + "개의 데이터를 가져왔습니다.";
         }
 
         private String addEvent(String calendarID, DateTime startDate, DateTime endDate) {
+            System.out.println("일정 추가!!\n");
             Event event = new Event()
                     .setSummary(scheduleTitle)
                     .setLocation("서울시")

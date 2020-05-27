@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         return connectionStatusCode == ConnectionResult.SUCCESS;
     }
 
-    /*
+    /**
      * Google Play Services 업데이트로 해결가능하다면 사용자가 최신 버전으로 업데이트하도록 유도하기위해
      * 대화상자를 보여줌.
      */
@@ -215,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
     }
 
-    /*
+    /**
      * 안드로이드 디바이스에 Google Play Services가 설치 안되어 있거나 오래된 버전인 경우 보여주는 대화상자
      */
     void showGooglePlayServicesAvailabilityErrorDialog(final int connectionStatusCode) {

@@ -1,5 +1,7 @@
 package com.yeeun.pics;
 import java.io.File;
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -11,13 +13,17 @@ public class FileUploadUtils {
 
     public static void sendToServer(File file) {
         try {
-            OkHttpClient client = new OkHttpClient();
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build();
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("file", file.getName(), RequestBody.create(MultipartBody.FORM, file))
                     .build();
             Request request = new Request.Builder()
-                    .url("http://15.165.161.235:5000/file")
+                    .url("http://3.34.134.202:5000/fileandcroll")
                     .post(requestBody)
                     .build();
 

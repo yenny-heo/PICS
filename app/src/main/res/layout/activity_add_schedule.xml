@@ -66,6 +66,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="저장"
+        android:background="@color/colorPrimaryDark"
+        android:textColor="#ffffff"
         android:layout_gravity="center"></Button>
 
 </LinearLayout>

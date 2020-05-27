@@ -11,20 +11,29 @@
         android:id="@+id/calendarView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:headerColor="@color/colorPrimary"/>
-    <TextView
-        android:id="@+id/event_list"
+        app:headerColor="@color/colorPrimary"
+        app:type="classic"/>
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        />
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/button_main_add_event"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/plus"
-        android:layout_gravity="center"
-        android:text="이벤트 추가"
-        android:layout_marginLeft="150dp"
-    ></com.google.android.material.floatingactionbutton.FloatingActionButton>
+        android:layout_height="wrap_content">
+
+        <ListView
+            android:id="@+id/listView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+        </ListView>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/button_main_add_event"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:layout_marginRight="20dp"
+            android:src="@drawable/plus"
+            android:text="이벤트 추가"
+            app:layout_anchor="@id/listView"
+            app:layout_anchorGravity="right|bottom">
+        </com.google.android.material.floatingactionbutton.FloatingActionButton>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </LinearLayout>
