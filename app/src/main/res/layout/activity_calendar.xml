@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -13,27 +14,22 @@
         android:layout_height="wrap_content"
         app:headerColor="@color/colorPrimary"
         app:type="classic"/>
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
+
+    <ListView
+        android:id="@+id/listView"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="70dp">
+    </ListView>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/button_main_add_event"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="20dp"
+        android:src="@drawable/plus"
+        android:layout_gravity="right"
+        android:text="이벤트 추가">
+    </com.google.android.material.floatingactionbutton.FloatingActionButton>
 
-        <ListView
-            android:id="@+id/listView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-        </ListView>
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/button_main_add_event"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:layout_marginRight="20dp"
-            android:src="@drawable/plus"
-            android:text="이벤트 추가"
-            app:layout_anchor="@id/listView"
-            app:layout_anchorGravity="right|bottom">
-        </com.google.android.material.floatingactionbutton.FloatingActionButton>
-
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </LinearLayout>

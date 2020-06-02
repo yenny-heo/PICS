@@ -18,6 +18,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
@@ -78,12 +79,20 @@ public class CalendarActivity extends AppCompatActivity {
     private FloatingActionButton addEventBtn;
     private CalendarView calendarView;
 
-    List<EventDay> calendarEvents = new ArrayList<>();
+    ArrayList<EventData> eventLists = new ArrayList<>();
+    ArrayList<EventData> showEventLists = new ArrayList<>();
+    ArrayList<EventDay> calendarEvents = new ArrayList<>();
+
+    ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendar);
+
+        listView = (ListView) findViewById(R.id.listView);
+        final MyAdapter myAdapter = new MyAdapter(this, showEventLists);
+        listView.setAdapter(myAdapter);
 
         //accountID = (TextView) findViewById(R.id.calendar_id);
         //eventList = (TextView) findViewById(R.id.event_list);
@@ -92,7 +101,17 @@ public class CalendarActivity extends AppCompatActivity {
         calendarView.setOnDayClickListener(new OnDayClickListener() {
             @Override
             public void onDayClick(EventDay eventDay) {
-                System.out.println("선택선택\n");
+                Calendar cal = eventDay.getCalendar();
+                showEventLists.clear();
+                for( EventData eventData : eventLists ) {
+                    if(eventData.getStartYear() == cal.get(Calendar.YEAR)
+                     && eventData.getStartMonth() == cal.get(Calendar.MONTH)
+                     && eventData.getStartDay() == cal.get(Calendar.DATE)){
+                        showEventLists.add(new EventData(eventData.getTitle(), eventData.getStartYear(), eventData.getStartMonth(), eventData.getStartDay(),
+                                eventData.getStartHour(), eventData.getStartMin(), eventData.getEndHour(), eventData.getEndMin()));
+                    }
+                }
+                myAdapter.notifyDataSetChanged();
             }
         });
 
@@ -133,6 +152,7 @@ public class CalendarActivity extends AppCompatActivity {
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                showEventLists.clear();
                 switch (i) {
                     case 0://이미지로 추가
                         try {
@@ -274,7 +294,6 @@ public class CalendarActivity extends AppCompatActivity {
 
         private Exception mLastError = null;
         private CalendarActivity mActivity;
-        List<String> eventStrings = new ArrayList<String>();
 
 
         public MakeRequestTask(CalendarActivity activity, GoogleAccountCredential credential) {
@@ -339,7 +358,7 @@ public class CalendarActivity extends AppCompatActivity {
         }
 
         private String getEvent() throws IOException, ParseException {
-
+            eventLists.clear();
             Events events = mService.events().list(calendarID)//"primary")
                     .setMaxResults(10)
                     //.setTimeMin(now)
@@ -351,22 +370,45 @@ public class CalendarActivity extends AppCompatActivity {
             for (Event event : items) {
 
                 DateTime start = event.getStart().getDateTime();
-                Calendar calendar = null;
-                if(start != null)
-                    calendar = DateTimetoCalendar(start);
+                DateTime end = event.getEnd().getDateTime();
+                Calendar startCalendar = null;
+                Calendar endCalendar = null;
+                //시작 시간
+                if(start != null) {
+                    startCalendar = DateTimetoCalendar(start);
+                }
                 else {
                     // 모든 이벤트가 시작 시간을 갖고 있지는 않다. 그런 경우 시작 날짜만 사용
                     start = event.getStart().getDate();
-                    calendar = DatetoCalendar(start);
+                    startCalendar = DatetoCalendar(start);
                 }
-                calendarEvents.add(new EventDay(calendar, R.drawable.event));
-                System.out.print(start.toString()+"\n");
-                eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
+                //끝 시간
+                if(end != null) {
+                    endCalendar = DateTimetoCalendar(end);
+                }
+                else {
+                    // 모든 이벤트가 시작 시간을 갖고 있지는 않다. 그런 경우 시작 날짜만 사용
+                    end = event.getStart().getDate();
+                    endCalendar = DatetoCalendar(end);
+                }
+                String title = event.getSummary();
+                int sy = startCalendar.get(Calendar.YEAR);
+                int sM = startCalendar.get(Calendar.MONTH);
+                int sd = startCalendar.get(Calendar.DATE);
+                int sh = startCalendar.get(Calendar.HOUR_OF_DAY);
+                int sm = startCalendar.get(Calendar.MINUTE);
+                int eh = endCalendar.get(Calendar.HOUR_OF_DAY);
+                int em = endCalendar.get(Calendar.MINUTE);
+
+                EventData mEventData = new EventData(title, sy, sM, sd, sh, sm, eh, em);
+                System.out.println(mEventData.getTitle()+ " "+mEventData.getStartHour()+" "+mEventData.getEndHour());
+                eventLists.add(mEventData);
+                calendarEvents.add(new EventDay(startCalendar, R.drawable.event));
 
             }
 
             System.out.println("set Event!!\n");
-            return eventStrings.size() + "개의 데이터를 가져왔습니다.";
+            return eventLists.size() + "개의 데이터를 가져왔습니다.";
         }
 
         private String addEvent(String calendarID, DateTime startDate, DateTime endDate) {
