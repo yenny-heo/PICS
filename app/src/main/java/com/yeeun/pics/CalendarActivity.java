@@ -227,22 +227,6 @@ public class CalendarActivity extends AppCompatActivity {
         }
     }
 
-    private String getRealPathFromURI(Uri contentURI) {
-
-        String result;
-        String [] proj = { MediaStore.Images.Media.DATA };
-        Cursor cursor = getContentResolver().query(contentURI, proj, null, null, null);
-
-        if (cursor == null) { // Source is Dropbox or other similar local file path
-            result = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATA);
-            result = cursor.getString(idx);
-            cursor.close();
-        }
-        return result;
-    }
 
     public String uriToFilename(Uri uri) {
         String path = null;
