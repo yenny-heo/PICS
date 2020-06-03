@@ -7,12 +7,14 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -242,6 +244,27 @@ public class CalendarActivity extends AppCompatActivity {
         return result;
     }
 
+    public String uriToFilename(Uri uri) {
+        String path = null;
+        Context context = getApplicationContext();
+        if (Build.VERSION.SDK_INT < 11) {
+            path = UriParser.getPath(context, uri);
+        } else if (Build.VERSION.SDK_INT < 19) {
+            path = UriParser.getPath(context.getApplicationContext(), uri);
+        } else {
+            path = UriParser.getPath(context.getApplicationContext(), uri);
+        }
+
+        uri = Uri.parse(path);
+
+        Cursor cursor = context.getContentResolver().query(uri, null, null, null, null );
+        cursor.moveToNext();
+        String resutlPath = cursor.getString( cursor.getColumnIndex( "_data" ) );
+        cursor.close();
+        return resutlPath;
+    }
+
+
     //이미지 선택 인텐트, AddScheduleActivity에서 돌아올 때 실행
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
@@ -250,7 +273,7 @@ public class CalendarActivity extends AppCompatActivity {
             case -1://이미지 선택 후
                     Uri dataUri = data.getData();
 
-                    String dataPath = getRealPathFromURI(dataUri);
+                    String dataPath = uriToFilename(dataUri);
                     selectedFile = new File(dataPath);
 
                     mProgress.show();
@@ -275,6 +298,8 @@ public class CalendarActivity extends AppCompatActivity {
                     break;
 
             case 0://직접 추가 후
+                    mProgress.setMessage("일정 추가중 입니다.");
+                    mProgress.show();
                     scheduleTitle = data.getStringExtra("title");
                     startDateString = data.getStringExtra("startDate");
                     endDateString = data.getStringExtra("endDate");
@@ -349,6 +374,7 @@ public class CalendarActivity extends AppCompatActivity {
             }
             if(mID == GET_EVENT){//get Event
                 calendarView.setEvents(calendarEvents);
+                mProgress.hide();
                 //eventList.setText(TextUtils.join("\n\n", eventStrings));
             }
         }
@@ -359,8 +385,8 @@ public class CalendarActivity extends AppCompatActivity {
 
         private String getEvent() throws IOException, ParseException {
             eventLists.clear();
+            calendarEvents.clear();
             Events events = mService.events().list(calendarID)//"primary")
-                    .setMaxResults(10)
                     //.setTimeMin(now)
                     .setOrderBy("startTime")
                     .setSingleEvents(true)
@@ -401,8 +427,10 @@ public class CalendarActivity extends AppCompatActivity {
                 int em = endCalendar.get(Calendar.MINUTE);
 
                 EventData mEventData = new EventData(title, sy, sM, sd, sh, sm, eh, em);
-                System.out.println(mEventData.getTitle()+ " "+mEventData.getStartHour()+" "+mEventData.getEndHour());
                 eventLists.add(mEventData);
+
+
+                System.out.println(mEventData.getTitle()+ " "+mEventData.getStartHour()+" "+mEventData.getEndHour());
                 calendarEvents.add(new EventDay(startCalendar, R.drawable.event));
 
             }

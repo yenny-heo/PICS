@@ -138,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         type = intent.getType();
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             mID = 2;
+            System.out.println("Hello\n");
             getResultsFromApi();
         } else {
             // Handle other intents, such as being started from the home screen
@@ -437,9 +438,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if ( mID == 1 || mID == 2) { // 캘린더 추가
                     return createCalendar();
                 }
-                else if (mID == 3) {//이벤트 받아오
-                    return getEvent();
-                }
 
             } catch (Exception e) {
                 mLastError = e;
@@ -451,41 +449,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
 
 
-        /*
-         * Pics 이름의 캘린더에서 10개의 이벤트를 가져와 리턴
-         */
-        private String getEvent() throws IOException {
 
-            DateTime now = new DateTime(System.currentTimeMillis());
-
-            String calendarID = getCalendarID("Pics");
-            if ( calendarID == null ){
-
-                return "캘린더를 먼저 생성하세요.";
-            }
-
-            Events events = mService.events().list(calendarID)//"primary")
-                    .setMaxResults(10)
-                    //.setTimeMin(now)
-                    .setOrderBy("startTime")
-                    .setSingleEvents(true)
-                    .execute();
-            List<Event> items = events.getItems();
-
-
-            for (Event event : items) {
-
-                DateTime start = event.getStart().getDateTime();
-                if (start == null) {
-
-                    // 모든 이벤트가 시작 시간을 갖고 있지는 않다. 그런 경우 시작 날짜만 사용
-                    start = event.getStart().getDate();
-                }
-                eventStrings.add(String.format("%s \n (%s)", event.getSummary(), start));
-            }
-
-            return eventStrings.size() + "개의 데이터를 가져왔습니다.";
-        }
 
         /*
          * 선택되어 있는 Google 계정에 새 캘린더를 추가한다.
@@ -531,8 +495,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     if (dataUri != null) {
                         Log.d(this.getClass().getName(), dataUri.toString());
                         Log.d(this.getClass().getName(),"image 받아옴");
-
+                        System.out.println("dataUri: "+dataUri);
                         String dataPath = getRealPathFromURI(dataUri);
+
                         selectedFile = new File(dataPath);
 
                         mProgress.setMessage("서버와 통신 중입니다.");

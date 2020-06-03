@@ -14,16 +14,16 @@ public class FileUploadUtils {
     public static void sendToServer(File file) {
         try {
             OkHttpClient client = new OkHttpClient.Builder()
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .writeTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
                     .build();
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("file", file.getName(), RequestBody.create(MultipartBody.FORM, file))
                     .build();
             Request request = new Request.Builder()
-                    .url("http://3.34.134.202:5000/fileandcroll")
+                    .url("http://13.125.253.240:5000/fileandcroll")
                     .post(requestBody)
                     .build();
 
