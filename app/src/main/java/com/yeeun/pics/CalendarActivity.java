@@ -370,6 +370,7 @@ public class CalendarActivity extends AppCompatActivity {
         private String getEvent() throws IOException, ParseException {
             eventLists.clear();
             calendarEvents.clear();
+            //삭제하려면: mService.events().delete(calendarID, eventID)
             Events events = mService.events().list(calendarID)//"primary")
                     //.setTimeMin(now)
                     .setOrderBy("startTime")
@@ -378,7 +379,7 @@ public class CalendarActivity extends AppCompatActivity {
             List<Event> items = events.getItems();
 
             for (Event event : items) {
-
+                System.out.println("event ID: " + event.getId());
                 DateTime start = event.getStart().getDateTime();
                 DateTime end = event.getEnd().getDateTime();
                 Calendar startCalendar = null;
