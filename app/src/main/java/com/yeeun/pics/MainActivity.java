@@ -22,6 +22,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -32,7 +33,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -97,6 +100,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
 
         setContentView(R.layout.activity_main);
 
@@ -176,9 +182,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
      * 하나라도 만족하지 않으면 해당 사항을 사용자에게 알림.
      */
     private String getResultsFromApi() {
-
-        if (!isGooglePlayServicesAvailable()) { // Google Play Services를 사용할 수 없는 경우
-
+        if(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)){//파일 접근 permission 허용 안된경우
+            ActivityCompat.requestPermissions(this,
+                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE} , 2);
+            getResultsFromApi();
+        }
+        else if (!isGooglePlayServicesAvailable()) { // Google Play Services를 사용할 수 없는 경우
             acquireGooglePlayServices();
         } else if (mCredential.getSelectedAccountName() == null) { // 유효한 Google 계정이 선택되어 있지 않은 경우
             chooseAccount();
@@ -495,15 +504,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     if (dataUri != null) {
                         Log.d(this.getClass().getName(), dataUri.toString());
                         Log.d(this.getClass().getName(),"image 받아옴");
-                        System.out.println("dataUri: "+dataUri);
+                        System.out.println("공유 dataUri: "+dataUri);
                         String dataPath = getRealPathFromURI(dataUri);
 
                         selectedFile = new File(dataPath);
 
-                        mProgress.setMessage("서버와 통신 중입니다.");
                         //서버와 통신
-                        new Thread() {
+                        (MainActivity.this).runOnUiThread(new Runnable() {
+                            @Override
                             public void run() {
+                                mProgress.setMessage("서버와 통신 중입니다.");
                                 FileUploadUtils.sendToServer(selectedFile);
                                 res = FileUploadUtils.res;
                                 Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
@@ -511,10 +521,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                                 intent.putExtra("id", id);
                                 intent.putExtra("data", res);
                                 startActivity(intent);
-
                             }
-                        }.start();
-
+                        });
                     }
                     // Update UI to reflect image being shared }
                 }
@@ -535,8 +543,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 intent.putExtra("id", id);
                 startActivity(intent);
             }
-      //      mStatusText.setText(output);
-  //          if ( mID == 3 )   mResultText.setText(TextUtils.join("\n\n", eventStrings));
         }
 
 
