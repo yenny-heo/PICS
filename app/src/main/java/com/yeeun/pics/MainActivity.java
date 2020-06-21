@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -34,6 +35,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.os.StrictMode;
 import android.provider.MediaStore;
@@ -91,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
 
+    int READ_PERMISSION = 0;
 
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = {CalendarScopes.CALENDAR};
@@ -182,10 +185,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
      * 하나라도 만족하지 않으면 해당 사항을 사용자에게 알림.
      */
     private String getResultsFromApi() {
-        if(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)){//파일 접근 permission 허용 안된경우
-            ActivityCompat.requestPermissions(this,
-                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE} , 2);
-            getResultsFromApi();
+        if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
         }
         else if (!isGooglePlayServicesAvailable()) { // Google Play Services를 사용할 수 없는 경우
             acquireGooglePlayServices();
@@ -330,21 +331,28 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
 
-    /*
-     * Android 6.0 (API 23) 이상에서 런타임 권한 요청시 결과를 리턴받음
-     */
     @Override
-    public void onRequestPermissionsResult(
-            int requestCode,  //requestPermissions(android.app.Activity, String, int, String[])에서 전달된 요청 코드
-            @NonNull String[] permissions, // 요청한 퍼미션
-            @NonNull int[] grantResults    // 퍼미션 처리 결과. PERMISSION_GRANTED 또는 PERMISSION_DENIED
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        if (requestCode == 2) {
+            // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //권한 설정 하면
+                getResultsFromApi();
 
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+            } else {
+                //권한 설정 안하면
+                toast.makeText(getApplicationContext(), "저장소 권한 허용을 해주세요", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        else{
+            EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+        }
+
+        // other 'case' lines to check for other
+        // permissions this app might request
     }
-
-
     /*
      * EasyPermissions 라이브러리를 사용하여 요청한 권한을 사용자가 승인한 경우 호출된다.
      */
