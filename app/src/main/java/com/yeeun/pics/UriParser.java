@@ -18,26 +18,14 @@ import java.io.InputStream;
 
 public class UriParser {
 
-    /**
-     * 获取小于api19时获取相册中图片真正的uri
-     * 对于路径是：content://media/external/images/media/33517这种的，需要转成/storage/emulated/0/DCIM/Camera/IMG_20160807_133403.jpg路径，也是使用这种方法
-     * @param context
-     * @param uri
-     * @return
-     */
     private static String getFilePath_below19(Context context,Uri uri) {
-        //这里开始的第二部分，获取图片的路径：低版本的是没问题的，但是sdk>19会获取不到
         Cursor cursor = null;
         String path = "";
         try {
             String[] proj = {MediaStore.Images.Media.DATA};
-            //好像是android多媒体数据库的封装接口，具体的看Android文档
             cursor = context.getContentResolver().query(uri, proj, null, null, null);
-            //获得用户选择的图片的索引值
             int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            //将光标移至开头 ，这个很重要，不小心很容易引起越界
             cursor.moveToFirst();
-            //最后根据索引值获取图片路径   结果类似：/mnt/sdcard/DCIM/Camera/IMG_20151124_013332.jpg
             path = cursor.getString(column_index);
         } finally {
             if (cursor != null) {
@@ -46,11 +34,6 @@ public class UriParser {
         }
         return path;
     }
-    /**
-     * @param context 上下文对象
-     * @param uri     当前相册照片的Uri
-     * @return 解析后的Uri对应的String
-     */
     @SuppressLint("NewApi")
     public static String getPath(final Context context, final Uri uri) {
         // FIXME: 2018/11/13 Added if condition for test
@@ -104,55 +87,31 @@ public class UriParser {
                     return getFilePath_below19(context, uri);
                 }
             }
-            // 3. 判断是否是文件形式 File
             else if ("file".equalsIgnoreCase(uri.getScheme())) {
                 return pathHead + uri.getPath();
             }
         }
         return null;
     }
-    /**
-     * @param uri
-     *         The Uri to check.
-     * @return Whether the Uri authority is ExternalStorageProvider.
-     */
     private static boolean isExternalStorageDocument(Uri uri) {
         return "com.android.externalstorage.documents".equals(uri.getAuthority());
     }
 
-    /**
-     * @param uri
-     *         The Uri to check.
-     * @return Whether the Uri authority is DownloadsProvider.
-     */
     private static boolean isDownloadsDocument(Uri uri) {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
     }
 
-    /**
-     * @param uri
-     *         The Uri to check.
-     * @return Whether the Uri authority is MediaProvider.
-     */
     private static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
-    /**
-     *  判断是否是Google相册的图片，类似于content://com.google.android.apps.photos.content/...
-     **/
     public static boolean isGooglePhotosUri(Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 
-    /**
-     *  判断是否是Google相册的图片，类似于content://com.google.android.apps.photos.contentprovider/0/1/mediakey:/local%3A821abd2f-9f8c-4931-bbe9-a975d1f5fabc/ORIGINAL/NONE/1075342619
-     **/
     public static boolean isGooglePlayPhotosUri(Uri uri) {
         return "com.google.android.apps.photos.contentprovider".equals(uri.getAuthority());
     }
-    /**
-     * Google相册图片获取路径
-     **/
+
     public static String getImageUrlWithAuthority(Context context, Uri uri) {
         InputStream is = null;
         if (uri.getAuthority() != null) {
@@ -175,9 +134,6 @@ public class UriParser {
         }
         return null;
     }
-    /**
-     * 将图片流读取出来保存到手机本地相册中
-     **/
     public static Uri writeToTempImageAndGetPathUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);

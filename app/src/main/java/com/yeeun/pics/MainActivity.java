@@ -17,6 +17,7 @@ import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.*;
 
 import android.Manifest;
+import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.Dialog;
@@ -249,28 +250,25 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
      */
     @AfterPermissionGranted(REQUEST_PERMISSION_GET_ACCOUNTS)
     private void chooseAccount() {
-
         // GET_ACCOUNTS 권한을 가지고 있다면
         if (EasyPermissions.hasPermissions(this, Manifest.permission.GET_ACCOUNTS)) {
-
             // SharedPreferences에서 저장된 Google 계정 이름을 가져온다.
-            String accountName = getPreferences(Context.MODE_PRIVATE)
-                    .getString(PREF_ACCOUNT_NAME, null);
+            String accountName = getPreferences(Context.MODE_PRIVATE).getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 // 선택된 구글 계정 이름으로 설정한다.
                 mCredential.setSelectedAccountName(accountName);
+                System.out.println(mCredential.getSelectedAccountName());
                 accName  = accountName;
                 getResultsFromApi();
             } else {
                 // 사용자가 구글 계정을 선택할 수 있는 다이얼로그를 보여준다.
-                startActivityForResult(
-                        mCredential.newChooseAccountIntent(),
-                        REQUEST_ACCOUNT_PICKER);
+                System.out.println("계정 다이얼로그\n");
+                startActivityForResult(mCredential.newChooseAccountIntent(),REQUEST_ACCOUNT_PICKER);
             }
 
             // GET_ACCOUNTS 권한을 가지고 있지 않다면
         } else {
-
+            System.out.println("계정 없음\n");
             // 사용자에게 GET_ACCOUNTS 권한을 요구하는 다이얼로그를 보여준다.(주소록 권한 요청함)
             EasyPermissions.requestPermissions(
                     (Activity)this,
@@ -315,6 +313,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         editor.apply();
                         mCredential.setSelectedAccountName(accountName);
                         accName = accountName;
+                        toast.makeText(getApplicationContext(), "계정: "+mCredential.getSelectedAccountName(), Toast.LENGTH_LONG).show();
                         getResultsFromApi();
                     }
                 }
@@ -443,7 +442,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         @Override
         protected void onPreExecute() {
             mProgress.show();
-      //    mResultText.setText("");
         }
 
         /*
@@ -453,6 +451,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         protected String doInBackground(Void... params) {
             try {
                 if ( mID == 1 || mID == 2) { // 캘린더 추가
+                    mProgress.setMessage("서버와 통신 중입니다.");
                     return createCalendar();
                 }
 
@@ -521,7 +520,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         (MainActivity.this).runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                mProgress.setMessage("서버와 통신 중입니다.");
                                 FileUploadUtils.sendToServer(selectedFile);
                                 res = FileUploadUtils.res;
                                 Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
