@@ -23,7 +23,7 @@ public class FileUploadUtils {
                     .addFormDataPart("file", file.getName(), RequestBody.create(MultipartBody.FORM, file))
                     .build();
             Request request = new Request.Builder()
-                    .url("http://52.78.86.88:5000/fileandcroll")
+                    .url("http://54.158.21.105:5000/fileandcroll")
                     .post(requestBody)
                     .build();
 

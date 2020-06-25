@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.accounts.Account;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -145,7 +146,7 @@ public class CalendarActivity extends AppCompatActivity {
                 Arrays.asList(SCOPES)
         ).setBackOff(new ExponentialBackOff());
 
-        mCredential.setSelectedAccountName(accID);
+        mCredential.setSelectedAccount(new Account(accID, "com.android.example"));
 
         //일정 받아오기
         mID = GET_EVENT;

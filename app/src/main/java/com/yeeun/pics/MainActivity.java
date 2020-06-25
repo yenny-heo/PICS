@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             String accountName = getPreferences(Context.MODE_PRIVATE).getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 // 선택된 구글 계정 이름으로 설정한다.
-                mCredential.setSelectedAccountName(accountName);
+                mCredential.setSelectedAccount(new Account(accountName, "com.android.example"));
                 System.out.println(mCredential.getSelectedAccountName());
                 accName  = accountName;
                 getResultsFromApi();
@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         SharedPreferences.Editor editor = settings.edit();
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
-                        mCredential.setSelectedAccountName(accountName);
+                        mCredential.setSelectedAccount(new Account(accountName, "com.android.example"));
                         accName = accountName;
                         toast.makeText(getApplicationContext(), "계정: "+mCredential.getSelectedAccountName(), Toast.LENGTH_LONG).show();
                         getResultsFromApi();
